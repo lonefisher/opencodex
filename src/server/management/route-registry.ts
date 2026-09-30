@@ -189,6 +189,10 @@ export const MANAGEMENT_ROUTES: readonly ManagementRoute[] = [
   { method: "PUT", path: "/api/codex-prompt/base/select", module: "server/management/codex-prompt-routes", mutates: true, exempt: { reason: "session-only", why: "Base prompt selection requires the gui-session principal (codex-prompt-routes.ts:298)." } },
   { method: "PUT", path: "/api/codex-prompt/custom", module: "server/management/codex-prompt-routes", mutates: true, exempt: { reason: "session-only", why: "Custom prompt write requires the gui-session principal (codex-prompt-routes.ts:298)." } },
   { method: "PUT", path: "/api/codex-prompt/toggle", module: "server/management/codex-prompt-routes", mutates: true, exempt: { reason: "session-only", why: "Prompt toggle requires the gui-session principal (codex-prompt-routes.ts:298)." } },
+  // server/management/codex-input-unlock-routes
+  { method: "GET", path: "/api/codex/input-unlock", module: "server/management/codex-input-unlock-routes", mutates: false },
+  { method: "PUT", path: "/api/codex/input-unlock", module: "server/management/codex-input-unlock-routes", mutates: true },
+  { method: "POST", path: "/api/codex/input-unlock/launch", module: "server/management/codex-input-unlock-routes", mutates: true },
   // server/management/combo-routes
   { method: "DELETE", path: "/api/combos", module: "server/management/combo-routes", mutates: true },
   { method: "GET", path: "/api/combos", module: "server/management/combo-routes", mutates: false },

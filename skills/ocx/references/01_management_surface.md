@@ -1017,6 +1017,26 @@ JSON mode: `payload`.
 - Restarts the Codex desktop app as well as the app-servers, through the same module the CLI uses. When the proxy itself runs inside the Codex app it refuses instead, because restarting the app would kill the request.
 - --yes is mandatory because this interrupts a running editor session and may discard unsaved composer drafts, model-picker selections, and pending approval prompts; it must never happen because an agent guessed a subcommand.
 
+### `ocx codex-input-unlock`
+
+Codex desktop input-unlock status and control (Windows only).
+
+| Method | Route |
+|---|---|
+| GET | `/api/codex/input-unlock` |
+| PUT | `/api/codex/input-unlock` |
+| POST | `/api/codex/input-unlock/launch` |
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--restart` | boolean | For `launch`: explicitly quit and relaunch a running Codex desktop instance so it carries the debug port. |
+| `--json` | boolean | Emit the input-unlock status or launch result as JSON. |
+
+JSON mode: `payload`.
+
+- `status` reads; `enable`/`disable` write `codexInputUnlock.enabled`; `launch` starts the client through COM activation with a loopback debug port.
+- Disabled by default. `launch` without --restart refuses while an ordinary Codex instance is running; --restart is the explicit consent for quitting it, which may discard unsaved composer drafts.
+
 ### `ocx claude config`
 
 Read or update Claude Code settings, including independent CLI first-party routing.
@@ -1207,6 +1227,6 @@ JSON mode: `payload`.
 
 ## Counts
 
-- declared capabilities: 67
-- of those, state-changing: 37
+- declared capabilities: 68
+- of those, state-changing: 38
 - head-resolved invocations: 2

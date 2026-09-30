@@ -974,6 +974,14 @@ export interface OcxConfig {
    */
   codexClientCompaction?: boolean;
   /**
+   * Opt-in Codex desktop input unlock (Windows only). When enabled, OpenCodex
+   * launches the official client through COM activation with a loopback CDP
+   * port and clears the front-end quota gate on the composer input for
+   * third-party providers. Absent or `enabled !== true` means fully off — no
+   * probing, no timers, no request-path integration.
+   */
+  codexInputUnlock?: { enabled?: boolean };
+  /**
    * Label Codex shows for the injected `opencodex` provider. Defaults to `OpenCodex Proxy`.
    *
    * Presentation only. Routing is keyed on the provider id `opencodex` — the root

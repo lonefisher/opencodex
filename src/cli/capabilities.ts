@@ -897,6 +897,25 @@ export const CAPABILITIES: readonly Capability[] = [
     ],
   },
   {
+    command: ["codex-input-unlock"],
+    summary: "Codex desktop input-unlock status and control (Windows only).",
+    routes: [
+      { method: "GET", path: "/api/codex/input-unlock" },
+      { method: "PUT", path: "/api/codex/input-unlock" },
+      { method: "POST", path: "/api/codex/input-unlock/launch" },
+    ],
+    flags: [
+      { name: "--restart", value: "boolean", summary: "For `launch`: explicitly quit and relaunch a running Codex desktop instance so it carries the debug port." },
+      { name: "--json", value: "boolean", summary: "Emit the input-unlock status or launch result as JSON." },
+    ],
+    mutates: true,
+    json: "payload",
+    details: [
+      "`status` reads; `enable`/`disable` write `codexInputUnlock.enabled`; `launch` starts the client through COM activation with a loopback debug port.",
+      "Disabled by default. `launch` without --restart refuses while an ordinary Codex instance is running; --restart is the explicit consent for quitting it, which may discard unsaved composer drafts.",
+    ],
+  },
+  {
     command: ["claude", "config"],
     summary: "Read or update Claude Code settings, including independent CLI first-party routing.",
     routes: [{ method: "GET", path: "/api/claude-code" }, { method: "PUT", path: "/api/claude-code" }],

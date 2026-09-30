@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useT } from "../i18n/shared";
 import CodexSetMultiauth from "./codex-set-multiauth";
 import CodexSetPrompt from "./codex-set-prompt";
+import CodexSetDesktop from "./codex-set-desktop";
 import { codexSetTabKeyDown, readCodexSetTabFromHash, selectCodexSetTab } from "./codex-set-tab";
 
 /**
@@ -22,6 +23,7 @@ export default function CodexSet({ apiBase }: { apiBase: string }) {
   // account poll behind a hidden panel - exactly the cost this shell was shaped to
   // avoid. Both panels now mount on first selection and stay mounted after.
   const [multiauthMounted, setMultiauthMounted] = useState(() => readCodexSetTabFromHash() === "multiauth");
+  const [desktopMounted, setDesktopMounted] = useState(() => readCodexSetTabFromHash() === "desktop");
 
   useEffect(() => {
     const onHash = () => setTab(readCodexSetTabFromHash());
@@ -35,8 +37,10 @@ export default function CodexSet({ apiBase }: { apiBase: string }) {
   // cheaper and the same value.
   const showPrompt = promptMounted || tab === "prompt";
   const showMultiauth = multiauthMounted || tab === "multiauth";
+  const showDesktop = desktopMounted || tab === "desktop";
   if (showPrompt !== promptMounted) setPromptMounted(true);
   if (showMultiauth !== multiauthMounted) setMultiauthMounted(true);
+  if (showDesktop !== desktopMounted) setDesktopMounted(true);
 
   return (
     <>
@@ -67,6 +71,19 @@ export default function CodexSet({ apiBase }: { apiBase: string }) {
         >
           {t("codexSet.tab.prompt")}
         </button>
+        <button
+          type="button"
+          role="tab"
+          id="codex-set-tab-desktop"
+          aria-selected={tab === "desktop"}
+          aria-controls="codex-set-panel-desktop"
+          tabIndex={tab === "desktop" ? 0 : -1}
+          className={`page-tab${tab === "desktop" ? " page-tab--active" : ""}`}
+          onClick={() => selectCodexSetTab("desktop")}
+          onKeyDown={codexSetTabKeyDown}
+        >
+          {t("codexSet.tab.desktop")}
+        </button>
       </div>
 
       {showPrompt && (
@@ -77,6 +94,17 @@ export default function CodexSet({ apiBase }: { apiBase: string }) {
           hidden={tab !== "prompt"}
         >
           <CodexSetPrompt apiBase={apiBase} />
+        </div>
+      )}
+
+      {showDesktop && (
+        <div
+          role="tabpanel"
+          id="codex-set-panel-desktop"
+          aria-labelledby="codex-set-tab-desktop"
+          hidden={tab !== "desktop"}
+        >
+          <CodexSetDesktop apiBase={apiBase} />
         </div>
       )}
 

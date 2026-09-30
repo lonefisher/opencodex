@@ -1878,5 +1878,11 @@
   "injection-routing-healer.test.ts": "codex-integration",
   "injection-routing-heal-apply.test.ts": "codex-integration",
   "cli-start-routing-heal-wiring.test.ts": "cli",
-  "cli-status-codex-routing-drift.test.ts": "cli"
+  "cli-status-codex-routing-drift.test.ts": "cli",
+  "codex-input-unlock-quota-gate.test.ts": "clients",
+  "codex-input-unlock-cdp.test.ts": "clients",
+  "codex-input-unlock-coordinator.test.ts": "clients",
+  "codex-input-unlock-windows.test.ts": "clients",
+  "codex-input-unlock-routes.test.ts": "server",
+  "codex-input-unlock.test.ts": "cli"
 }

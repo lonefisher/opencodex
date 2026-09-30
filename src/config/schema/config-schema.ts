@@ -239,6 +239,11 @@ export const configSchema = z.object({
   codexShimAutoRestore: z.boolean().optional(),
   codexDesktopAuthless: z.boolean().optional().catch(undefined),
   codexClientCompaction: z.boolean().optional().catch(undefined),
+  // Same degrade rule as the neighbouring desktop flags: a malformed section costs
+  // only this opt-in feature, never providers or accounts.
+  codexInputUnlock: z.object({
+    enabled: z.boolean().optional().catch(undefined),
+  }).optional().catch(undefined),
   // Presentation-only label for the injected provider. A malformed value degrades to undefined
   // and the default label is emitted, rather than failing the parse or writing a config Codex
   // would refuse to load — the provider id routing depends on is never derived from it.

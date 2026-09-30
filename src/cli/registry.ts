@@ -106,6 +106,15 @@ export const CLI_COMMANDS: CliCommandEntry[] = [
     details: ["Use `remove` as an alias for `uninstall`."],
   },
   {
+    name: "codex-input-unlock",
+    usage: "ocx codex-input-unlock <status|enable|disable|launch> [--restart] [--json]",
+    summary: "Manage the opt-in Codex desktop input unlock (Windows only).",
+    details: [
+      "When enabled, OpenCodex launches the official client with a loopback CDP port and clears the composer's local quota gate for third-party providers.",
+      "`launch` refuses while an ordinary instance is running; `launch --restart` explicitly quits and relaunches it.",
+    ],
+  },
+  {
     name: "tray",
     usage: "ocx tray <install|start|stop|status|uninstall|remove> [--json] [--no-start]",
     summary: "Install and control the Windows status tray icon (deprecated in favor of the desktop app).",

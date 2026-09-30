@@ -61,7 +61,7 @@ function setLivePolicyOwner(applyPolicy: PolicyApply | null): void {
   setStorageCleanupPolicyJobLiveApply(applyPolicy);
 }
 
-function startProcessLoops(applyPolicy: PolicyApply): ProcessLoops {
+function startProcessLoops(applyPolicy: PolicyApply, config: OcxConfig): ProcessLoops {
   let memoryWatchdog: MemoryWatchdog | null = null;
   let stateStoreSweeper: ReturnType<typeof startStateStoreSweeper> | null = null;
   try {
@@ -98,6 +98,15 @@ function startProcessLoops(applyPolicy: PolicyApply): ProcessLoops {
       .then(activation => activation.syncQuotaResetActivation())
       .catch(() => {
         // The next poll tick retries.
+      });
+    // Codex input unlock is opt-in: the hook returns without creating a timer
+    // unless config.codexInputUnlock.enabled is true, so a default install pays
+    // one module record and nothing else. Fire-and-forget for the same reason —
+    // a Windows process probe must never hold up listener startup.
+    void import("../codex/input-unlock/coordinator")
+      .then(coordinator => coordinator.codexInputUnlockStartupReconcile(config))
+      .catch(() => {
+        // Disabled or unavailable: status reports it on the next reconcile.
       });
     return { memoryWatchdog, stateStoreSweeper };
   } catch (error) {
@@ -187,7 +196,7 @@ export function acquireServerBackgroundLifecycle(
   };
   try {
     if (!processLoops) {
-      processLoops = startProcessLoops(applyPolicy);
+      processLoops = startProcessLoops(applyPolicy, config);
     } else {
       setLivePolicyOwner(applyPolicy);
     }

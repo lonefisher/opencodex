@@ -720,6 +720,10 @@ const commandRunners: Record<string, CommandRunner> = {
     }
     return 0;
   },
+  "codex-input-unlock": async deps => {
+    const { handleCodexInputUnlockCommand } = await import("./codex-input-unlock");
+    return handleCodexInputUnlockCommand(deps.args.slice(1), deps);
+  },
   update: async deps => {
     // `ocx update --help` must print usage and exit WITHOUT side effects — running the
     // real self-update stops the proxy and drops in-flight routed streams (issue #168).
