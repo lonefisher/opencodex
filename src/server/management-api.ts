@@ -219,6 +219,17 @@ async function handleLinkRoutesOnDemand(ctx: ManagementContext): Promise<Respons
   return handleLinkRoutes(ctx);
 }
 
+/**
+ * Lazy like the other on-demand handlers: the coordinator owns the CDP
+ * supervisor and Windows launch seams, none of which belong on unrelated
+ * dashboard requests.
+ */
+async function handleCodexInputUnlockRoutesOnDemand(ctx: ManagementContext): Promise<Response | null> {
+  if (!pathInManagementNamespace(ctx.url.pathname, "/api/codex/input-unlock")) return null;
+  const { handleCodexInputUnlockRoutes } = await import("./management/codex-input-unlock-routes");
+  return handleCodexInputUnlockRoutes(ctx);
+}
+
 export async function handleManagementAPI(
   req: Request,
   url: URL,
@@ -360,6 +371,7 @@ export async function handleManagementAPI(
     ??     (await handleClaudeDesktopPickerRoutes(ctx))
     ??     (await handleAgentSettingsRoutes(ctx))
     ??     (await handleCodexPromptRoutes(ctx))
+    ??     (await handleCodexInputUnlockRoutesOnDemand(ctx))
     ??     (await handleOauthAccountRoutes(ctx))
     ??     (await handleDecisionRoutes(ctx))
     ??     (await handleComboRoutes(ctx))

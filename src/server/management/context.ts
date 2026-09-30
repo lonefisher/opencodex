@@ -23,6 +23,7 @@ import type {
   readCodexAppServerState,
 } from "../../codex/app-server-restart-service";
 import type { RequestMetricsSnapshotter } from "../request-metrics";
+import type { CodexInputUnlockRuntime } from "./codex-input-unlock-routes";
 
 import type { RemoteWorkspaceHub } from "../../remote-control/workspace-hub";
 import type { RemoteWorkspaceSessionService } from "../../remote-control/workspace-sessions";
@@ -161,6 +162,13 @@ export interface ManagementApiDeps {
   revokeApiKey?: (config: OcxConfig, id: string) => boolean;
   loadLinkCandidates?: () => Array<{ alias: string; source: "ssh_config" | "tailscale" }>;
   /** Bound public inference port, not the ingress receiving this management request. */
+  /**
+   * Codex desktop input-unlock runtime seam. Production leaves this unset and
+   * the route lazy-imports the coordinator; route tests inject it so no real
+   * PowerShell, CDP endpoint, or desktop process is ever reached.
+   */
+  codexInputUnlock?: CodexInputUnlockRuntime;
+  /** The port this runtime listens on; a join is refused unless it is the configured port. */
   liveListenPort?: () => number | undefined;
   now?: () => number;
 }

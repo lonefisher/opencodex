@@ -21,12 +21,18 @@ import {
   type DesktopProcess,
 } from "./types";
 
-/** Every probe is bounded; PowerShell module loading is the slow part. */
-const PROBE_TIMEOUT_MS = 10_000;
+/** Every probe is bounded; on machines with slow CIM the per-process GetOwner loop — not the spawn — is what eats the budget. */
+const PROBE_TIMEOUT_MS = 30_000;
 const MAX_ANCESTRY_HOPS = 16;
 const SHELL_BASENAME = "chatgpt.exe";
 
-const POWERSHELL_PROBE_OPTIONS = { timeout: PROBE_TIMEOUT_MS, windowsHide: true } as const;
+/**
+ * The probe options the synchronous adapter passes to `execFileSync`, exported
+ * so async callers (the input-unlock coordinator, which must not block the
+ * proxy event loop on a PowerShell spawn) share the same bound.
+ */
+export const WINDOWS_POWERSHELL_PROBE_OPTIONS = { timeout: PROBE_TIMEOUT_MS, windowsHide: true } as const;
+const POWERSHELL_PROBE_OPTIONS = WINDOWS_POWERSHELL_PROBE_OPTIONS;
 
 /**
  * isUnderRoot checks a lexical path boundary and is case-sensitive. Windows
@@ -50,8 +56,13 @@ function isMemberExecutable(executable: string, root: string): boolean {
  * changes between builds, so a literal AUMID would silently stop matching and
  * then either do nothing or — worse — match a package we did not mean.
  */
-function discoverPackage(exec: DesktopExec): DesktopAppInstall | null {
-  const script = [
+/**
+ * The package-discovery probe, exported as a script string so the async
+ * input-unlock enumeration path runs the identical command without going
+ * through the synchronous `execFileSync` contract.
+ */
+export function windowsDiscoverScript(): string {
+  return [
     "$ErrorActionPreference='SilentlyContinue'",
     "Import-Module Appx -ErrorAction SilentlyContinue",
     "$p = Get-AppxPackage -Name OpenAI.Codex",
@@ -60,12 +71,10 @@ function discoverPackage(exec: DesktopExec): DesktopAppInstall | null {
     "  $p.PackageFamilyName; $p.InstallLocation; \"$($p.PackageFamilyName)!App\"",
     "}",
   ].join("; ");
-  let stdout: string;
-  try {
-    stdout = exec(resolveTrustedWindowsPowerShellExe(), ["-NoProfile", "-NonInteractive", "-Command", script], POWERSHELL_PROBE_OPTIONS);
-  } catch {
-    return null;
-  }
+}
+
+/** Parse {@link windowsDiscoverScript} stdout; null means "not installed" or unparseable. */
+export function parseWindowsDiscover(stdout: string): DesktopAppInstall | null {
   const lines = stdout.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
   if (lines.length < 3 || lines[0] === "MISS") return null;
   const [family, installLocation, aumid] = lines;
@@ -73,8 +82,21 @@ function discoverPackage(exec: DesktopExec): DesktopAppInstall | null {
   return { id: family, root: installLocation, relaunch: aumid };
 }
 
+function discoverPackage(exec: DesktopExec): DesktopAppInstall | null {
+  let stdout: string;
+  try {
+    stdout = exec(resolveTrustedWindowsPowerShellExe(), ["-NoProfile", "-NonInteractive", "-Command", windowsDiscoverScript()], POWERSHELL_PROBE_OPTIONS);
+  } catch {
+    return null;
+  }
+  return parseWindowsDiscover(stdout);
+}
+
 /**
- * Only `ChatGPT.exe` processes whose image lives under the discovered install
+ * The process-listing probe, exported like {@link windowsDiscoverScript} for
+ * the same async caller.
+ *
+ * Lists only `ChatGPT.exe` processes whose image lives under the discovered install
  * location AND owned by the current user. The install location alone is not
  * enough: an MSIX package under `WindowsApps` is shared, so on a multi-user
  * machine another account's Codex desktop matches the same path. The app-server
@@ -87,9 +109,9 @@ function discoverPackage(exec: DesktopExec): DesktopAppInstall | null {
  * rather than by PowerShell's `StartsWith`, which is a prefix test and would
  * admit a sibling `OpenAI.Codex-evil` directory.
  */
-function listPackageProcesses(exec: DesktopExec, install: DesktopAppInstall): DesktopProcess[] | null {
-  const literal = install.root.replace(/'/g, "''");
-  const script = [
+export function windowsListProcessesScript(root: string): string {
+  const literal = root.replace(/'/g, "''");
+  return [
     "$ErrorActionPreference='SilentlyContinue'",
     `$root = '${literal}'.Replace('/', '\\')`,
     "$me = ([Security.Principal.WindowsIdentity]::GetCurrent()).Name",
@@ -108,24 +130,33 @@ function listPackageProcesses(exec: DesktopExec, install: DesktopAppInstall): De
   // `$ErrorActionPreference='SilentlyContinue' $root = '...'` into one malformed statement,
   // which PowerShell rejects — so the probe threw and every caller read "not running" (#2557).
   ].join("\n");
+}
+
+/** Parse all of {@link windowsListProcessesScript}'s stdout into member processes. */
+export function parseWindowsProcessList(stdout: string, root: string): DesktopProcess[] {
+  const processes: DesktopProcess[] = [];
+  for (const line of stdout.split(/\r?\n/)) {
+    const parsed = parseWindowsProcessLine(line, root);
+    if (parsed) processes.push(parsed);
+  }
+  return processes;
+}
+
+function listPackageProcesses(exec: DesktopExec, install: DesktopAppInstall): DesktopProcess[] | null {
   let stdout: string;
   try {
-    stdout = exec(resolveTrustedWindowsPowerShellExe(), ["-NoProfile", "-NonInteractive", "-Command", script], POWERSHELL_PROBE_OPTIONS);
+    stdout = exec(resolveTrustedWindowsPowerShellExe(), ["-NoProfile", "-NonInteractive", "-Command", windowsListProcessesScript(install.root)], POWERSHELL_PROBE_OPTIONS);
   } catch {
     // A probe that could not run is NOT proof the app is absent. Returning [] here made a
     // failed enumeration indistinguishable from "no targets", so the CLI reported the app as
     // not running and skipped a restart the user had explicitly asked for.
     return null;
   }
-  const processes: DesktopProcess[] = [];
-  for (const line of stdout.split(/\r?\n/)) {
-    const parsed = parseProcessLine(line, install.root);
-    if (parsed) processes.push(parsed);
-  }
-  return processes;
+  return parseWindowsProcessList(stdout, install.root);
 }
 
-function parseProcessLine(line: string, root: string): DesktopProcess | null {
+/** Parse one stdout line of {@link windowsListProcessesScript}; null when not a member process. */
+export function parseWindowsProcessLine(line: string, root: string): DesktopProcess | null {
   const match = /^\s*(\d+)\s+(\d+)\s+(\S+)(?:\s+(.+))?$/.exec(line);
   if (!match) return null;
   const pid = Number(match[1]);

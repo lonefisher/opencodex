@@ -8,7 +8,7 @@
 Use these declarations to choose a task, then check its flags and authority before execution.
 Non-mutating probes may still contact providers, consume quota or refresh caches.
 
-Declared capabilities: 92.
+Declared capabilities: 96.
 
 ### `ocx companion`
 
@@ -1749,6 +1749,91 @@ State-changing: yes.
 JSON mode: `payload`.
 
 - Settings only; no usage timeline request.
+
+### `ocx codex-input-unlock status`
+
+Usage: `ocx codex-input-unlock status [--json]`
+
+Codex desktop input-unlock status (Windows only).
+
+State-changing: no.
+
+| Method | Route |
+|---|---|
+| GET | `/api/codex/input-unlock` |
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--json` | boolean | Emit the input-unlock status as JSON. |
+
+JSON mode: `payload`.
+
+- Reads the opt-in Codex desktop input unlock: enabled flag plus live coordinator state (waiting / restart_required / attaching / mounted / incompatible / failed).
+- Disabled by default; nothing runs until enabled.
+
+### `ocx codex-input-unlock enable`
+
+Usage: `ocx codex-input-unlock enable [--json]`
+
+Enable the Codex desktop input unlock.
+
+State-changing: yes.
+
+| Method | Route |
+|---|---|
+| PUT | `/api/codex/input-unlock` |
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--json` | boolean | Emit the resulting status as JSON. |
+
+JSON mode: `payload`.
+
+- Writes codexInputUnlock.enabled=true and starts the coordinator, which supervises a debug-port Codex desktop instance.
+- A client already running without the debug port reports restart_required; launch --restart is the explicit consent to replace it.
+
+### `ocx codex-input-unlock disable`
+
+Usage: `ocx codex-input-unlock disable [--json]`
+
+Disable the Codex desktop input unlock.
+
+State-changing: yes.
+
+| Method | Route |
+|---|---|
+| PUT | `/api/codex/input-unlock` |
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--json` | boolean | Emit the resulting status as JSON. |
+
+JSON mode: `payload`.
+
+- Writes codexInputUnlock.enabled=false, removes breakpoints and bootstrap scripts, and stops the coordinator tick.
+- A running client keeps its debug port until it is next restarted.
+
+### `ocx codex-input-unlock launch`
+
+Usage: `ocx codex-input-unlock launch [--restart] [--json]`
+
+Launch Codex desktop with the input-unlock debug port.
+
+State-changing: yes.
+
+| Method | Route |
+|---|---|
+| POST | `/api/codex/input-unlock/launch` |
+
+| Flag | Value | Meaning |
+|---|---|---|
+| `--restart` | boolean | Explicitly quit and relaunch a running Codex desktop instance so it carries the debug port. |
+| `--json` | boolean | Emit the launch result as JSON. |
+
+JSON mode: `payload`.
+
+- Without --restart, refuses while an ordinary (non-debug) instance is running.
+- --restart is the explicit consent for quitting the running client, which may discard unsaved composer drafts.
 
 ### `ocx tray install`
 

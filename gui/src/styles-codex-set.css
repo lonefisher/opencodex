@@ -442,6 +442,29 @@
 :lang(ko) .codex-main-hard-lock-copy .card-sub,
 :lang(ko) .codex-main-hard-lock-dialog .modal-desc { word-break: keep-all; }
 
+/* ---------------------------------------------------------------------------
+   Desktop tab (input unlock). The same name->control scan line as the prompt
+   rows: label left, live status or switch pinned right.
+   --------------------------------------------------------------------------- */
+.codex-set-desktop__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+}
+
+.codex-set-desktop__row .toggle,
+.codex-set-desktop__row .data-surface-status {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.codex-set-desktop__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 /* Account-pool threshold summary stays with the account workspace. */
 .account-pool-strategy-controls .setting-controls {
   display: flex;
